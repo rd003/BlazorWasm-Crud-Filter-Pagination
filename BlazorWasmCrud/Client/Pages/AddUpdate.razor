@@ -1,0 +1,61 @@
+﻿@page "/person/add"
+@page "/person/edit/{id:int}"
+@using BlazorWasmCrud.Shared.Models
+@inject HttpClient http
+<PageTitle>@Title</PageTitle>
+<h3>@Title</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <a href="/persons" class="btn btn-secondary my-2">All records</a>
+        
+        <EditForm Model="@person" OnValidSubmit="Save" >
+              <DataAnnotationsValidator/>
+         <div class="form-group">
+             <label for="Name">Name</label>
+            <InputText @bind-Value="person.Name" class="form-control"/>
+            <ValidationMessage For="@(()=>person.Name)"/>
+         </div>
+
+            <div class="form-group">
+                <label for="Email">Email</label>
+                <InputText @bind-Value="person.Email" class="form-control" />
+                <ValidationMessage For="@(()=>person.Email)" />
+            </div>
+
+            <div class="py-2 @messageClass">
+                @status.Message
+            </div>
+
+            <div class="py-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private string Title = "Add person";
+    private string messageClass = "";
+    Person person = new();
+    Status? status = new();
+    private async Task Save()
+    {
+        status.StatusCode = 0;
+        status.Message = "Wait.....";
+        var response = await http.PostAsJsonAsync("api/person/addupdate", person);
+        status = await response.Content.ReadFromJsonAsync<Status>();
+        messageClass = status.StatusCode == 1 ? "text-success" : "text-danger";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id > 0)
+        {
+            person = await http.GetFromJsonAsync<Person>($"api/person/getbyid/{Id}");
+        }
+    }
+}
